@@ -1,0 +1,319 @@
+================================================================
+  CheckMe - Object Detection App
+  COMPLETE SETUP & DEPLOYMENT GUIDE
+  (Backend + Android APK)
+================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. What Is This App?
+2. How the App Works
+3. Files You Have
+4. Step-by-Step: Deploy the Backend (Make It Live)
+   A. Option 1 — Render.com (FREE, Recommended)
+   B. Option 2 — Railway.app (FREE tier)
+   C. Option 3 — Your Own Server / VPS (Advanced)
+5. Step-by-Step: Rebuild & Install the APK (After Backend Is Live)
+6. Testing the App
+7. Troubleshooting
+
+
+================================================================
+1. WHAT IS THIS APP?
+================================================================
+
+"CheckMe" is an AI-powered object detection Android app.
+
+- Take a photo OR pick from gallery
+- Photo is sent to a backend server
+- The server runs a YOLOv8 AI model to detect objects
+- App shows the annotated image + list of detected objects
+
+The app has TWO parts:
+  [1] Backend  → Django server running on the cloud
+  [2] Frontend → Android APK installed on the phone
+
+
+================================================================
+2. HOW THE APP WORKS
+================================================================
+
+  Phone (APK)
+      |
+      | HTTP POST (sends photo)
+      v
+  Backend Server (Django + YOLOv8)
+      |
+      | Processes image, detects objects
+      |
+      | HTTP Response (annotated image URL + object list)
+      v
+  Phone (APK shows result)
+
+The APK CANNOT work without the backend running.
+You need to deploy the backend to the internet first.
+
+
+================================================================
+3. FILES YOU HAVE
+================================================================
+
+Backend/
+├── Dockerfile              ← Docker configuration for the server
+├── docker-compose.yml      ← Runs Django + PostgreSQL together
+├── entrypoint.sh           ← Auto-runs migrations on startup
+├── requirements.txt        ← Python packages needed
+└── object_detection/       ← Django project folder
+    ├── .env                ← Environment config (edit this!)
+    ├── .env.example        ← Template for production settings
+    ├── manage.py
+    ├── yolov8s.pt          ← The YOLOv8 AI model file
+    ├── detection/          ← Main app code
+    └── object_detection/   ← Django settings, urls, etc.
+
+FrontEnd/ReactNative/       ← React Native app source code
+    ├── App.js
+    ├── .env                ← Backend URL for the APK (edit this!)
+    └── eas.json            ← APK build configuration
+
+
+================================================================
+4. STEP-BY-STEP: DEPLOY THE BACKEND
+================================================================
+
+OPTION A — RENDER.COM (FREE, Recommended for Beginners)
+-------------------------------------------------------
+
+Render gives you a free web service and free PostgreSQL.
+
+STEP 1: Push your Backend code to GitHub
+  - Go to https://github.com
+  - Create a new repository (name it: checkme-backend)
+  - Upload ONLY the "Backend" folder contents to the repo
+    (Dockerfile, docker-compose.yml, entrypoint.sh,
+     requirements.txt, object_detection/ folder)
+
+STEP 2: Sign up at https://render.com
+  - Use GitHub login
+
+STEP 3: Create a PostgreSQL Database
+  - Click "New" → "PostgreSQL"
+  - Name: checkme-db
+  - Region: pick closest to you
+  - Plan: FREE
+  - Click "Create Database"
+  - SAVE the "Internal Database URL" shown on the dashboard
+
+STEP 4: Create a Web Service
+  - Click "New" → "Web Service"
+  - Connect your GitHub repo (checkme-backend)
+  - Settings:
+      Name:         checkme-api
+      Region:       same as database
+      Branch:       main
+      Root Dir:     (leave blank)
+      Runtime:      Docker
+      Plan:         FREE
+  - Click "Advanced" → "Add Environment Variables"
+    Add these one by one:
+
+    SECRET_KEY     = [generate any long random string, e.g. paste output of:
+                      python -c "import secrets; print(secrets.token_hex(50))" ]
+    DEBUG          = False
+    ALLOWED_HOSTS  = your-service-name.onrender.com
+    DB_HOST        = [copy "Hostname" from your PostgreSQL dashboard]
+    DB_NAME        = [copy "Database" from your PostgreSQL dashboard]
+    DB_USER        = [copy "Username" from your PostgreSQL dashboard]
+    DB_PASSWORD    = [copy "Password" from your PostgreSQL dashboard]
+    DB_PORT        = 5432
+
+  - Click "Create Web Service"
+  - Wait for it to build and deploy (5-10 minutes first time)
+  - Your backend URL will be: https://your-service-name.onrender.com
+
+STEP 5: Test the backend
+  - Open a browser and go to:
+    https://your-service-name.onrender.com/upload/
+  - You should see a JSON response (even if it says "method not allowed")
+  - This means the backend is LIVE ✓
+
+--------------------------------------------------------------
+
+OPTION B — RAILWAY.APP (FREE tier with limits)
+----------------------------------------------
+
+STEP 1: Push Backend code to GitHub (same as Option A, Step 1)
+
+STEP 2: Sign up at https://railway.app
+  - Use GitHub login
+
+STEP 3: New Project → "Deploy from GitHub repo"
+  - Select your checkme-backend repo
+  - Railway auto-detects the Dockerfile
+
+STEP 4: Add a PostgreSQL plugin
+  - In your project dashboard, click "New" → "Database" → "PostgreSQL"
+  - Railway auto-links it to your service
+
+STEP 5: Set environment variables (same as Option A, Step 4)
+  - Go to your web service → "Variables" tab
+  - Add all the env vars listed above
+  - For DB_HOST/DB_NAME/etc., click on your PostgreSQL service
+    and copy from the "Variables" tab there
+
+STEP 6: Your backend URL will be shown in the service dashboard
+  - Usually: https://your-app.up.railway.app
+
+--------------------------------------------------------------
+
+OPTION C — YOUR OWN VPS (e.g. DigitalOcean, Linode, AWS EC2)
+-------------------------------------------------------------
+
+STEP 1: Get a Linux server with Docker & Docker Compose installed
+  - Ubuntu 22.04 recommended
+  - Install Docker: https://docs.docker.com/engine/install/ubuntu/
+
+STEP 2: Copy the Backend folder to your server
+  - Using SCP:  scp -r Backend/ user@your-server-ip:/home/user/checkme/
+  - Or use git
+
+STEP 3: Edit the .env file on the server
+  nano /home/user/checkme/object_detection/.env
+
+  Add these contents:
+  -----------------------------------------------
+  DEBUG=False
+  SECRET_KEY=your-very-long-random-secret-key-here
+  ALLOWED_HOSTS=your-server-ip
+  DB_NAME=checkme_db
+  DB_USER=postgres
+  DB_PASSWORD=strongpasswordhere
+  DB_HOST=db
+  DB_PORT=5432
+  -----------------------------------------------
+
+STEP 4: Start the server
+  cd /home/user/checkme/
+  docker-compose up --build -d
+
+STEP 5: Open firewall port 8000
+  ufw allow 8000
+
+STEP 6: Test it
+  Open browser: http://your-server-ip:8000/upload/
+  You should see a JSON response ✓
+
+
+================================================================
+5. REBUILD & INSTALL THE APK (After Backend Is Live)
+================================================================
+
+Once your backend URL is live, you need to rebuild the APK
+so it points to the correct server address.
+
+STEP 1: Update the backend URL in the frontend
+  Open this file:
+    FrontEnd/ReactNative/.env
+
+  Change this line:
+    EXPO_PUBLIC_SERVER_URL=http://10.116.184.244:8000/upload/
+
+  To your actual backend URL:
+    EXPO_PUBLIC_SERVER_URL=https://your-service-name.onrender.com/upload/
+  OR
+    EXPO_PUBLIC_SERVER_URL=http://your-server-ip:8000/upload/
+
+  Save the file.
+
+STEP 2: Open a terminal / PowerShell in the ReactNative folder
+
+STEP 3: Build the production APK
+  Run:
+    $env:EAS_NO_VCS=1 ; eas.cmd build -p android --profile production
+
+  - It will upload to Expo's cloud and build there
+  - Takes about 5-15 minutes
+  - When done, you get a download link in the terminal
+  - The link format: https://expo.dev/accounts/mar21yam/...
+
+STEP 4: Download the APK
+  - Click the link shown in the terminal
+  - Or go to: https://expo.dev/accounts/mar21yam/projects/checkme/builds
+  - Download the latest .apk file
+
+STEP 5: Install on Android phone
+  - Transfer the .apk to your phone (WhatsApp, cable, Google Drive, etc.)
+  - On the phone: Settings → Security → "Allow install from unknown sources"
+  - Open the .apk file → Install
+  - Open the CheckMe app
+
+
+================================================================
+6. TESTING THE APP
+================================================================
+
+After installation, to verify everything works:
+
+1. Open the CheckMe app
+2. Tap "Open Your Camera" OR "Open Your Gallery"
+3. Take/select a photo
+4. App will show "Uploading and processing image..."
+5. After a few seconds: result screen with annotated image
+   and list of detected objects
+
+If it works → SUCCESS! The full app is working end-to-end.
+
+QUICK TEST for backend (without the phone):
+  Open Postman or any API client:
+  - Method: POST
+  - URL: https://your-backend-url/upload/
+  - Body: form-data
+  - Key: image (type: File)
+  - Value: any .jpg photo
+  - Send → Should return JSON with result_image_url and detected_objects
+
+
+================================================================
+7. TROUBLESHOOTING
+================================================================
+
+PROBLEM: App opens and immediately crashes
+  FIX: Make sure you have the LATEST APK (built after this guide).
+       Earlier builds had a missing gesture handler — the new build
+       includes the fix.
+
+PROBLEM: "Error uploading image" on the phone
+  FIX 1: Make sure the backend server is running
+  FIX 2: Check the URL in .env ends with /upload/
+  FIX 3: If using a VPS with just an IP, make sure port 8000 is open
+  FIX 4: On Render free tier, the server "sleeps" after 15 min of
+          inactivity. First request may take 30-60 seconds to wake up.
+
+PROBLEM: Backend won't start / crashes on deploy
+  FIX: Check that all env vars are set (especially SECRET_KEY,
+       DB_HOST, DB_NAME, DB_USER, DB_PASSWORD)
+  CHECK LOGS: docker-compose logs web  (on VPS)
+               or the Render/Railway dashboard logs tab
+
+PROBLEM: "ALLOWED_HOSTS" error in backend logs
+  FIX: Add your server's domain/IP to ALLOWED_HOSTS env var
+       Example: ALLOWED_HOSTS=api.myapp.com,144.22.33.44
+
+PROBLEM: Database connection refused
+  FIX: Make sure DB_HOST=db (in docker-compose) or the correct
+       hostname from your cloud DB provider
+
+PROBLEM: Static/media files not loading
+  FIX: The backend serves media files at /media/ path
+       WhiteNoise serves /static/ files automatically
+       Make sure STATIC_ROOT is set (it is in the current code)
+
+
+================================================================
+  END OF GUIDE
+  App: CheckMe — Object Detection AI
+  Backend: Django + YOLOv8 + PostgreSQL
+  Frontend: React Native (Expo) Android APK
+  
+  Build by: AI Assistant (Antigravity)
+================================================================
