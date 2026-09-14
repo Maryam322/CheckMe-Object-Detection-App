@@ -16,42 +16,7 @@ Django-based backend
 React Native mobile application
  Docker configuration for backend deployment
  PostgreSQL support for production deployment
-System Architecture
-┌─────────────────────────────┐
-│       React Native App      │
-│                             │
-│  Camera / Gallery Selection │
-└──────────────┬──────────────┘
-               │
-               │ HTTP POST
-               │ Image Upload
-               ▼
-┌─────────────────────────────┐
-│       Django REST API       │
-│                             │
-│     Image Processing        │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│          YOLOv8             │
-│      Object Detection       │
-└──────────────┬──────────────┘
-               │
-               │ Detection Results
-               ▼
-┌─────────────────────────────┐
-│       Django Response       │
-│                             │
-│ Annotated Image + Objects   │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│       React Native App      │
-│                             │
-│     Results Screen          │
-└─────────────────────────────┘
+
  Tech Stack
 Frontend
 React Native
@@ -82,51 +47,7 @@ Docker
 Docker Compose
 Render / Railway
 Expo EAS
-📁 Project Structure
-CheckMe-Object-Detection-App/
-│
-├── Backend/
-│   ├── object_detection/
-│   │   ├── detection/
-│   │   │   ├── migrations/
-│   │   │   ├── admin.py
-│   │   │   ├── apps.py
-│   │   │   ├── models.py
-│   │   │   ├── serializers.py
-│   │   │   ├── tests.py
-│   │   │   ├── urls.py
-│   │   │   └── views.py
-│   │   │
-│   │   ├── object_detection/
-│   │   │   ├── settings.py
-│   │   │   ├── urls.py
-│   │   │   ├── asgi.py
-│   │   │   └── wsgi.py
-│   │   │
-│   │   ├── manage.py
-│   │   ├── yolov8s.pt
-│   │   └── .env.example
-│   │
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   ├── entrypoint.sh
-│   ├── requirements.txt
-│   └── .gitignore
-│
-├── FrontEnd/
-│   └── ReactNative/
-│       ├── assets/
-│       ├── App.js
-│       ├── StartScreen.js
-│       ├── ResultScreen.js
-│       ├── package.json
-│       ├── package-lock.json
-│       ├── app.json
-│       ├── eas.json
-│       ├── .env.example
-│       └── .gitignore
-│
-└── README.md
+
  How It Works
 1. Image Selection
 
@@ -272,14 +193,12 @@ docker-compose up --build
 
 This builds and starts the backend environment.
 
-☁️ Deployment
+ Deployment
 
 The backend can be deployed using platforms such as:
-
 Render
 Railway
 VPS / Cloud server
-
 For production deployment:
 
 Create a PostgreSQL database.
