@@ -5,7 +5,6 @@
 The project combines a **React Native mobile application** with a **Django REST API backend**. Images are uploaded to the backend, processed by YOLOv8, and returned with detected objects and an annotated image.
 
 ##  Features
-
 *  Capture images using the device camera
 *  Select images from the gallery
 *  YOLOv8-powered object detection
@@ -44,11 +43,6 @@ The project combines a **React Native mobile application** with a **Django REST 
 * Ultralytics
 * Image Processing
 * Object Detection
-
-### Database
-
-* SQLite — Local Development
-* PostgreSQL — Production
 
 ### Deployment
 
@@ -230,14 +224,6 @@ docker-compose up --build
 
 This builds and starts the backend environment.
 
-##  Deployment
-
-The Django backend can be deployed to:
-
-* Render
-* Railway
-* VPS / Cloud Server
-
 For production:
 
 1. Create a PostgreSQL database.
@@ -293,6 +279,3 @@ This project demonstrates practical experience with:
 Computer Science Student | Full Stack Developer
 
 GitHub: [Maryam322](https://github.com/Maryam322)
-
----
- If you find this project useful, consider giving it a star!
